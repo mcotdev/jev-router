@@ -32,6 +32,13 @@ Assumption: you use Claude as an agent (for example Claude Code) and let it call
 If you use Jev only from your own application code, this tool does not apply.
 Your application should call the Jev SDK directly.
 
+## Local only
+
+`jev-router` runs only on your machine.
+It has no server, no accounts, no telemetry and no shared storage.
+The cache, ledger, playbooks and run files are local files.
+The only network call it makes is the one you ask for: state and questions go to the Jev API at `api.typesafe.ai`.
+
 ## Goals
 
 - Cut Claude's input and output tokens per Jev call by at least 80%. This is a proposed target, to confirm after the baseline run.
@@ -45,6 +52,7 @@ Your application should call the Jev SDK directly.
 - Making Jev itself cheaper. Trimming state helps a little, but Jev's bill is already small.
 - Compressing Claude's own reasoning, or other tools' output.
 - Replacing the Jev SDK in production code.
+- Hosting, sharing or syncing anything. There is no hosted mode.
 - Answering open-ended questions. Jev is not built for that, and neither is this tool.
 
 ## Where Claude's tokens go today
@@ -229,7 +237,7 @@ A playbook can mark itself `stakes: high`. For those, the router never marks an 
 - **The key stays in the router.** It reads `TYPESAFE_API_KEY` from the environment. It never prints the key, logs it or returns it.
 - **The router reads only allowed folders.** The default is the project root. It always denies `.env*`, `*.pem`, `id_*`, `.git/config` and `.npmrc`.
 - **A secret scan runs before sending.** If the state contains something that looks like a key or token, the router stops and says which file and how many matches. It does not print the secret. You can change this policy in `.jev/policy.yaml`.
-- **State leaves your machine.** The router sends it to `api.typesafe.ai`, or to the Netlify AI Gateway if you choose that. The `preview` option and the ledger make this visible.
+- **State leaves your machine only for Jev.** The router sends it to `api.typesafe.ai` and nowhere else. The `preview` option and the ledger make this visible.
 - **State trimming is opt-in.** Dropping files or truncating can change Jev's answers. A playbook turns it on explicitly, and Phase 3 tests it against the untrimmed result.
 
 ## Measuring the saving
@@ -287,7 +295,6 @@ The router passes if B uses fewer Claude tokens than A and its correctness is no
 5. **Later.**
    Chunking for state above the 32,000-token per-question limit (it can lose information, so it stays optional).
    Playbook-to-SDK code generation.
-   Use of the Netlify AI Gateway.
 
 ## Suggested stack
 
@@ -308,7 +315,6 @@ Check these against the official docs before you build:
 - Whether the same request always returns the same answer. The cache design assumes it is stable enough to reuse.
 - The size and wording of the official `typesafe-ai` skill. Phase 0 measures it.
 - The JavaScript package name, `@typesafe-ai/sdk`. One search result could not confirm it. This design uses the Python SDK.
-- Whether Netlify's AI Gateway uses the same request format.
 
 ## Decisions for you
 
